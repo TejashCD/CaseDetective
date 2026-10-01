@@ -1,0 +1,56 @@
+// The built-in demo case (introductory economics).
+// Lives on the server so the solution and reveal conditions stay hidden from the browser.
+// `keywords` are only used for offline grading when the AI service can't be reached.
+export const DEMO_CASE = {
+  title: "The Case of the Vanished Tulips",
+  place: "Jordaan, Amsterdam",
+  intro: "Rain on the Prinsengracht. A tulip trader has lost everything overnight, and three people saw it coming.",
+  objective: "Question all three witnesses, earn their evidence, then report to the Politiebureau.",
+  accusation_question: "What destroyed the tulip trader? Explain it using all three concepts you uncovered.",
+  solution:
+    "The trader bet on a speculative bubble. Prices were pushed up by expectations rather than real demand, so when supply flooded the market the price collapsed. At the peak, designer tulips were a luxury with substitutes, so demand was highly elastic and buyers fled as soon as prices moved. And the trader ignored external costs, the pollution from his greenhouses, which the town finally charged him for.",
+  npcs: [
+    {
+      name: "Marieke de Vries",
+      role: "Flower seller",
+      location: "Bloemenmarkt",
+      sign: "BLOEMEN",
+      concept: "Supply and demand",
+      greeting: "You're the detective? Then you'd better understand a market before you understand a crime.",
+      challenge: "If the supply of tulips suddenly doubles but nobody wants more of them, what happens to the price, and why?",
+      reveal_condition: "Says the price falls because supply now exceeds demand at the old price, so sellers must cut prices to clear stock.",
+      hint: "what happens when there is far more of something than people want to buy?",
+      clue: "Receipt: tulip prices crashed the week supply doubled",
+      personality: "brisk, warm, sharp-eyed",
+      keywords: ["fall", "drop", "lower", "decrease", "cheaper", "crash", "surplus"],
+    },
+    {
+      name: "Meneer Visser",
+      role: "Banker",
+      location: "Herengracht 412",
+      sign: "BANK",
+      concept: "Price elasticity of demand",
+      greeting: "Mind the carpet. I deal in numbers, not feelings, detective.",
+      challenge: "Is demand for bread elastic or inelastic? And for designer tulips? Justify one of them.",
+      reveal_condition: "Bread is inelastic because it's a necessity with few substitutes; designer tulips are elastic because they're a luxury with substitutes, so buyers react strongly to price changes.",
+      hint: "who stops buying when the price rises, and who keeps buying no matter what?",
+      clue: "Ledger: buyers vanished the moment prices peaked",
+      personality: "precise, dry, impatient",
+      keywords: ["inelastic", "elastic", "substitute", "sensitive", "necessity", "luxury"],
+    },
+    {
+      name: "Boer Joop",
+      role: "Farmer",
+      location: "Polder edge, Westerpark",
+      sign: "BOERDERIJ",
+      concept: "Externalities",
+      greeting: "Mind the mud. Something stinks in my ditch, and it's not the cows.",
+      challenge: "Greenhouse runoff pollutes my ditch. Who pays for that, and why is the market price of those tulips wrong?",
+      reveal_condition: "Identifies the pollution as an external cost borne by third parties (neighbours, society) that isn't included in the market price, so the price is too low.",
+      hint: "who bears a cost that the seller never has to pay?",
+      clue: "Water report: runoff costs nobody paid for",
+      personality: "slow, blunt, honest",
+      keywords: ["externalit", "third part", "society", "community", "neighbo", "not in the price", "pollut"],
+    },
+  ],
+};
