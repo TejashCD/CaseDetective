@@ -1,0 +1,11 @@
+// Example notes for the sample topic buttons on the title screen.
+
+export const SAMPLES: Readonly<Record<string, string>> = {
+  photosynthesis:
+    "Photosynthesis. Plants convert light energy into chemical energy stored in glucose, inside chloroplasts. Light-dependent reactions happen in the thylakoid membranes: chlorophyll absorbs light, water is split (photolysis) releasing oxygen, and the energy makes ATP and NADPH. The Calvin cycle happens in the stroma: the enzyme RuBisCO fixes CO2, and ATP and NADPH are used to build G3P and then glucose. Limiting factors: light intensity, CO2 concentration and temperature. Too high a temperature denatures enzymes.",
+  ww1: "Causes of the First World War (MAIN): Militarism, the arms race and naval rivalry between Britain and Germany. Alliances, the Triple Entente and Triple Alliance turned a local conflict into a continental war. Imperialism, competition for colonies and markets. Nationalism, especially in the Balkans; Serbian nationalism and the assassination of Archduke Franz Ferdinand in Sarajevo in June 1914 was the trigger. The July Crisis: Austria-Hungary's ultimatum to Serbia, Russian mobilisation, Germany's Schlieffen Plan and the invasion of Belgium brought Britain in.",
+  newton:
+    "Newton's laws of motion. First law (inertia): an object stays at rest or moves at constant velocity unless a resultant force acts on it. Second law: resultant force equals mass times acceleration (F = ma); a bigger force gives a bigger acceleration, a bigger mass gives a smaller one. Third law: when object A exerts a force on B, B exerts an equal and opposite force on A; the pair acts on different objects, so they don't cancel. Friction and air resistance oppose motion; terminal velocity is reached when drag equals weight.",
+  algorithms:
+    "Sorting algorithms. Bubble sort repeatedly swaps adjacent out-of-order elements; O(n^2) comparisons, simple but slow. Merge sort is divide and conquer: split the list in half, sort each half recursively, merge the sorted halves; O(n log n) always, needs extra memory, stable. Quicksort picks a pivot and partitions elements into smaller and larger, then recurses; O(n log n) on average but O(n^2) worst case with bad pivots, sorts in place. Big-O describes how running time grows with input size.",
+};

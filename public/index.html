@@ -1,233 +1,343 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>CaseDetective</title>
-  <meta name="description" content="Turn your study notes into a detective case. Earn every clue by explaining the concept to an AI witness.">
-  <meta name="theme-color" content="#0b0f14">
-  <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-  <canvas id="backdrop" aria-hidden="true"></canvas>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>CaseDetective</title>
+    <meta
+      name="description"
+      content="Turn your study notes into a detective case. Earn every clue by explaining the concept to an AI witness."
+    />
+    <meta name="theme-color" content="#0b0f14" />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+  <body>
+    <canvas id="backdrop" aria-hidden="true"></canvas>
 
-  <!-- Title ------------------------------------------------------------- -->
-  <section id="screen-title" class="screen">
-    <header class="masthead">
-      <div class="brand">
-        <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="13" cy="13" r="8.5" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M19.5 19.5 27 27" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
-        <span>CaseDetective</span>
+    <!-- Title ------------------------------------------------------------- -->
+    <section id="screen-title" class="screen">
+      <header class="masthead">
+        <div class="brand">
+          <svg viewBox="0 0 32 32" aria-hidden="true">
+            <circle cx="13" cy="13" r="8.5" fill="none" stroke="currentColor" stroke-width="2.5" />
+            <path d="M19.5 19.5 27 27" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+          </svg>
+          <span>CaseDetective</span>
+        </div>
+      </header>
+
+      <div class="title-grid">
+        <div class="pitch">
+          <p class="kicker">Amsterdam &middot; Night shift &middot; File no. 0417</p>
+          <h1>Every clue is a concept.<br /><em>Explain it to earn it.</em></h1>
+          <p class="lede">
+            Paste your study notes and they become a detective case with three witnesses. Each one guards a key idea and only hands over the
+            evidence when you prove you understand it.
+          </p>
+          <ol class="steps">
+            <li>
+              <span>01</span>
+              <div><b>Open a case</b> from your notes or any topic.</div>
+            </li>
+            <li>
+              <span>02</span>
+              <div><b>Walk the canals</b> and find three witnesses.</div>
+            </li>
+            <li>
+              <span>03</span>
+              <div><b>Explain each concept</b> in your own words to earn its clue.</div>
+            </li>
+            <li>
+              <span>04</span>
+              <div><b>Report to the police</b> and tie all three together.</div>
+            </li>
+          </ol>
+        </div>
+
+        <form id="intake" class="dossier" novalidate>
+          <div class="dossier-tab">Case intake</div>
+          <label for="material" class="field-label">What are you studying?</label>
+          <textarea
+            id="material"
+            rows="8"
+            maxlength="40000"
+            placeholder="Paste notes, a chapter summary, or just a topic.&#10;&#10;e.g. Cell biology: osmosis, diffusion, active transport"
+          ></textarea>
+          <div class="field-meta"><span>Try a sample</span><span id="count">0 / 40,000</span></div>
+          <div class="chips" role="group" aria-label="Sample topics">
+            <button type="button" class="chip" data-sample="photosynthesis">Photosynthesis</button>
+            <button type="button" class="chip" data-sample="ww1">Causes of WWI</button>
+            <button type="button" class="chip" data-sample="newton">Newton's laws</button>
+            <button type="button" class="chip" data-sample="algorithms">Sorting algorithms</button>
+          </div>
+          <button type="submit" class="btn primary block" id="open-case">
+            Open the case file
+            <svg viewBox="0 0 20 20" aria-hidden="true">
+              <path
+                d="M4 10h11M11 5l5 5-5 5"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </button>
+          <button type="button" class="btn ghost block" id="play-demo">Play the demo case &middot; Economics</button>
+          <p id="intake-error" class="error" role="alert"></p>
+        </form>
       </div>
-    </header>
 
-    <div class="title-grid">
-      <div class="pitch">
-        <p class="kicker">Amsterdam &middot; Night shift &middot; File no. 0417</p>
-        <h1>Every clue is a concept.<br><em>Explain it to earn it.</em></h1>
-        <p class="lede">Paste your study notes and they become a detective case with three witnesses. Each one guards a key idea and only hands over the evidence when you prove you understand it.</p>
-        <ol class="steps">
-          <li><span>01</span><div><b>Open a case</b> from your notes or any topic.</div></li>
-          <li><span>02</span><div><b>Walk the canals</b> and find three witnesses.</div></li>
-          <li><span>03</span><div><b>Explain each concept</b> in your own words to earn its clue.</div></li>
-          <li><span>04</span><div><b>Report to the police</b> and tie all three together.</div></li>
+      <footer class="title-foot">
+        <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or click to move</span>
+        <span><kbd>E</kbd> to talk</span>
+      </footer>
+    </section>
+
+    <!-- Loading ----------------------------------------------------------- -->
+    <section id="screen-loading" class="screen" hidden>
+      <div class="loading-card">
+        <p class="kicker">Writing your case</p>
+        <h2>Opening a new file</h2>
+        <ol id="loading-steps" class="loading-steps">
+          <li>Reading your material</li>
+          <li>Choosing three core concepts</li>
+          <li>Casting the witnesses</li>
+          <li>Sealing the solution in an envelope</li>
         </ol>
+        <div class="progress"><i id="loading-bar"></i></div>
+        <p class="fine">This usually takes 20 to 40 seconds.</p>
       </div>
+    </section>
 
-      <form id="intake" class="dossier" novalidate>
-        <div class="dossier-tab">Case intake</div>
-        <label for="material" class="field-label">What are you studying?</label>
-        <textarea id="material" rows="8" maxlength="40000" placeholder="Paste notes, a chapter summary, or just a topic.&#10;&#10;e.g. Cell biology: osmosis, diffusion, active transport"></textarea>
-        <div class="field-meta"><span>Try a sample</span><span id="count">0 / 40,000</span></div>
-        <div class="chips" role="group" aria-label="Sample topics">
-          <button type="button" class="chip" data-sample="photosynthesis">Photosynthesis</button>
-          <button type="button" class="chip" data-sample="ww1">Causes of WWI</button>
-          <button type="button" class="chip" data-sample="newton">Newton's laws</button>
-          <button type="button" class="chip" data-sample="algorithms">Sorting algorithms</button>
-        </div>
-        <button type="submit" class="btn primary block" id="open-case">
-          Open the case file
-          <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11M11 5l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </button>
-        <button type="button" class="btn ghost block" id="play-demo">Play the demo case &middot; Economics</button>
-        <p id="intake-error" class="error" role="alert"></p>
-      </form>
-    </div>
+    <!-- Game -------------------------------------------------------------- -->
+    <section id="screen-game" class="screen" hidden>
+      <div class="game-layout">
+        <div class="stage" id="stage">
+          <canvas
+            id="world"
+            width="960"
+            height="540"
+            tabindex="0"
+            aria-label="Game world. Use W A S D or arrow keys to move and E to interact."
+          ></canvas>
 
-    <footer class="title-foot">
-      <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or click to move</span>
-      <span><kbd>E</kbd> to talk</span>
-    </footer>
-  </section>
-
-  <!-- Loading ----------------------------------------------------------- -->
-  <section id="screen-loading" class="screen" hidden>
-    <div class="loading-card">
-      <p class="kicker">Writing your case</p>
-      <h2>Opening a new file</h2>
-      <ol id="loading-steps" class="loading-steps">
-        <li>Reading your material</li>
-        <li>Choosing three core concepts</li>
-        <li>Casting the witnesses</li>
-        <li>Sealing the solution in an envelope</li>
-      </ol>
-      <div class="progress"><i id="loading-bar"></i></div>
-      <p class="fine">This usually takes 20 to 40 seconds.</p>
-    </div>
-  </section>
-
-  <!-- Game -------------------------------------------------------------- -->
-  <section id="screen-game" class="screen" hidden>
-    <div class="game-layout">
-      <div class="stage" id="stage">
-        <canvas id="world" width="960" height="540" tabindex="0" aria-label="Game world. Use W A S D or arrow keys to move and E to interact."></canvas>
-
-        <div class="hud-top">
-          <div class="case-chip"><i class="live"></i><b id="hud-title"></b><span id="hud-place"></span></div>
-          <div class="hud-actions">
-            <button id="btn-sound" class="icon-btn" aria-label="Sound on" aria-pressed="true" title="Sound">
-              <svg class="on" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 8h3l4-3v10l-4-3H3z" fill="currentColor"/><path d="M13 7a4 4 0 0 1 0 6M15.5 4.5a7.5 7.5 0 0 1 0 11" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-              <svg class="off" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 8h3l4-3v10l-4-3H3z" fill="currentColor"/><path d="m13 8 4 4m0-4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-            </button>
-            <button id="btn-help" class="icon-btn" aria-label="Briefing and controls" title="Briefing">
-              <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M7.8 7.6a2.3 2.3 0 1 1 3.2 2.1c-.7.3-1 .8-1 1.5v.4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="10" cy="14.4" r="1" fill="currentColor"/></svg>
-            </button>
-            <button id="btn-close" class="btn small ghost">End &amp; review</button>
-          </div>
-        </div>
-
-        <div id="prompt" class="prompt" hidden><kbd>E</kbd><span id="prompt-text"></span></div>
-        <div id="toasts" class="toasts" aria-live="polite"></div>
-
-        <div class="touch-pad" aria-hidden="true">
-          <div class="dpad">
-            <button data-key="up" aria-label="Up">&#9650;</button>
-            <button data-key="left" aria-label="Left">&#9664;</button>
-            <button data-key="down" aria-label="Down">&#9660;</button>
-            <button data-key="right" aria-label="Right">&#9654;</button>
-          </div>
-          <button class="action" id="touch-action">Talk</button>
-        </div>
-      </div>
-
-      <aside class="sidebar">
-        <!-- Case file -->
-        <div id="panel-file" class="panel">
-          <div class="file-head">
-            <p class="kicker">Case file</p>
-            <h2 id="file-title"></h2>
-            <p id="file-intro" class="file-intro"></p>
-          </div>
-          <div class="objective">
-            <span class="label">Objective</span>
-            <p id="file-objective"></p>
-          </div>
-
-          <section class="block">
-            <div class="block-head"><span class="label">Evidence</span><span id="evidence-count" class="count">0 / 3</span></div>
-            <div id="evidence" class="evidence"></div>
-          </section>
-
-          <section class="block">
-            <div class="block-head"><span class="label">Suspicion</span><span id="sus-label" class="count">Calm</span></div>
-            <div class="meter" id="sus-meter" role="meter" aria-valuemin="0" aria-valuemax="100" aria-label="Suspicion"><i id="sus-fill"></i></div>
-            <p class="fine">Careless answers raise it. At 100 the witness throws you out.</p>
-          </section>
-
-          <section class="block">
-            <div class="block-head"><span class="label">Witnesses</span><span class="count">Click to walk there</span></div>
-            <ul id="witnesses" class="witnesses"></ul>
-          </section>
-
-          <button id="btn-station" class="btn primary block" disabled>Report to the Politiebureau</button>
-        </div>
-
-        <!-- Interview -->
-        <div id="panel-chat" class="panel chat" hidden>
-          <header class="chat-head">
-            <canvas id="portrait" width="48" height="48" aria-hidden="true"></canvas>
-            <div class="who">
-              <b id="chat-name"></b>
-              <span id="chat-role"></span>
+          <div class="hud-top">
+            <div class="case-chip"><i class="live"></i><b id="hud-title"></b><span id="hud-place"></span></div>
+            <div class="hud-actions">
+              <button id="btn-sound" class="icon-btn" aria-label="Sound on" aria-pressed="true" title="Sound">
+                <svg class="on" viewBox="0 0 20 20" aria-hidden="true">
+                  <path d="M3 8h3l4-3v10l-4-3H3z" fill="currentColor" />
+                  <path
+                    d="M13 7a4 4 0 0 1 0 6M15.5 4.5a7.5 7.5 0 0 1 0 11"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.6"
+                    stroke-linecap="round"
+                  />
+                </svg>
+                <svg class="off" viewBox="0 0 20 20" aria-hidden="true">
+                  <path d="M3 8h3l4-3v10l-4-3H3z" fill="currentColor" />
+                  <path d="m13 8 4 4m0-4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+                </svg>
+              </button>
+              <button id="btn-help" class="icon-btn" aria-label="Briefing and controls" title="Briefing">
+                <svg viewBox="0 0 20 20" aria-hidden="true">
+                  <circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.6" />
+                  <path
+                    d="M7.8 7.6a2.3 2.3 0 1 1 3.2 2.1c-.7.3-1 .8-1 1.5v.4"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.6"
+                    stroke-linecap="round"
+                  />
+                  <circle cx="10" cy="14.4" r="1" fill="currentColor" />
+                </svg>
+              </button>
+              <button id="btn-close" class="btn small ghost">End &amp; review</button>
             </div>
-            <button id="btn-leave" class="btn small ghost">Leave <kbd>Esc</kbd></button>
-          </header>
-          <div class="chat-strip">
-            <div><span class="label">Concept</span><span id="chat-concept"></span></div>
-            <span id="chat-status" class="pill">Sealed</span>
           </div>
-          <div class="chat-sus"><span class="label">Suspicion</span><div class="meter small"><i id="chat-sus-fill"></i></div></div>
-          <div id="chat-log" class="chat-log" aria-live="polite"></div>
-          <div id="quick" class="quick" role="group" aria-label="Suggested replies"></div>
-          <form id="chat-form" class="chat-form">
-            <textarea id="chat-input" rows="2" maxlength="1500" placeholder="Explain it in your own words…" aria-label="Your answer"></textarea>
-            <button class="btn primary" id="chat-send" aria-label="Send">
-              <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 10h12M10 4l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </button>
-          </form>
-          <p class="fine chat-hint"><kbd>Enter</kbd> send &middot; <kbd>Shift</kbd>+<kbd>Enter</kbd> new line &middot; <kbd>1</kbd>–<kbd>3</kbd> pick a reply</p>
-        </div>
-      </aside>
-    </div>
-  </section>
 
-  <!-- Report ------------------------------------------------------------ -->
-  <section id="screen-report" class="screen" hidden>
-    <div id="report" class="report"></div>
-  </section>
+          <div id="prompt" class="prompt" hidden><kbd>E</kbd><span id="prompt-text"></span></div>
+          <div id="toasts" class="toasts" aria-live="polite"></div>
 
-  <!-- Briefing dialog --------------------------------------------------- -->
-  <dialog id="dlg-brief" class="dialog">
-    <form method="dialog">
-      <p class="kicker">Briefing</p>
-      <h2 id="brief-title"></h2>
-      <p id="brief-intro" class="brief-intro"></p>
-      <div class="brief-grid">
-        <div>
-          <span class="label">Your witnesses</span>
-          <ul id="brief-witnesses" class="brief-list"></ul>
+          <div class="touch-pad" aria-hidden="true">
+            <div class="dpad">
+              <button data-key="up" aria-label="Up">&#9650;</button>
+              <button data-key="left" aria-label="Left">&#9664;</button>
+              <button data-key="down" aria-label="Down">&#9660;</button>
+              <button data-key="right" aria-label="Right">&#9654;</button>
+            </div>
+            <button class="action" id="touch-action">Talk</button>
+          </div>
         </div>
-        <div>
-          <span class="label">Controls</span>
-          <ul class="controls">
-            <li><span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span>Walk (or click anywhere)</li>
-            <li><span><kbd>E</kbd></span>Talk / enter</li>
-            <li><span><kbd>Esc</kbd></span>Leave a conversation</li>
-            <li><span><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd></span>Quick replies</li>
-          </ul>
-        </div>
+
+        <aside class="sidebar">
+          <!-- Case file -->
+          <div id="panel-file" class="panel">
+            <div class="file-head">
+              <p class="kicker">Case file</p>
+              <h2 id="file-title"></h2>
+              <p id="file-intro" class="file-intro"></p>
+            </div>
+            <div class="objective">
+              <span class="label">Objective</span>
+              <p id="file-objective"></p>
+            </div>
+
+            <section class="block">
+              <div class="block-head"><span class="label">Evidence</span><span id="evidence-count" class="count">0 / 3</span></div>
+              <div id="evidence" class="evidence"></div>
+            </section>
+
+            <section class="block">
+              <div class="block-head"><span class="label">Suspicion</span><span id="sus-label" class="count">Calm</span></div>
+              <div class="meter" id="sus-meter" role="meter" aria-valuemin="0" aria-valuemax="100" aria-label="Suspicion">
+                <i id="sus-fill"></i>
+              </div>
+              <p class="fine">Careless answers raise it. At 100 the witness throws you out.</p>
+            </section>
+
+            <section class="block">
+              <div class="block-head"><span class="label">Witnesses</span><span class="count">Click to walk there</span></div>
+              <ul id="witnesses" class="witnesses"></ul>
+            </section>
+
+            <button id="btn-station" class="btn primary block" disabled>Report to the Politiebureau</button>
+          </div>
+
+          <!-- Interview -->
+          <div id="panel-chat" class="panel chat" hidden>
+            <header class="chat-head">
+              <canvas id="portrait" width="48" height="48" aria-hidden="true"></canvas>
+              <div class="who">
+                <b id="chat-name"></b>
+                <span id="chat-role"></span>
+              </div>
+              <button id="btn-leave" class="btn small ghost">Leave <kbd>Esc</kbd></button>
+            </header>
+            <div class="chat-strip">
+              <div><span class="label">Concept</span><span id="chat-concept"></span></div>
+              <span id="chat-status" class="pill">Sealed</span>
+            </div>
+            <div class="chat-sus">
+              <span class="label">Suspicion</span>
+              <div class="meter small"><i id="chat-sus-fill"></i></div>
+            </div>
+            <div id="chat-log" class="chat-log" aria-live="polite"></div>
+            <div id="quick" class="quick" role="group" aria-label="Suggested replies"></div>
+            <form id="chat-form" class="chat-form">
+              <textarea
+                id="chat-input"
+                rows="2"
+                maxlength="1500"
+                placeholder="Explain it in your own words..."
+                aria-label="Your answer"
+              ></textarea>
+              <button class="btn primary" id="chat-send" aria-label="Send">
+                <svg viewBox="0 0 20 20" aria-hidden="true">
+                  <path
+                    d="M3 10h12M10 4l6 6-6 6"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </button>
+            </form>
+            <p class="fine chat-hint">
+              <kbd>Enter</kbd> send &middot; <kbd>Shift</kbd>+<kbd>Enter</kbd> new line &middot; <kbd>1</kbd>–<kbd>3</kbd> pick a reply
+            </p>
+          </div>
+        </aside>
       </div>
-      <p class="fine">Witnesses judge understanding, not keywords. Answer in your own words. Ask for a hint any time; honest questions never raise suspicion.</p>
-      <button class="btn primary block" value="go" autofocus>Begin the investigation</button>
-    </form>
-  </dialog>
+    </section>
 
-  <!-- Accusation dialog ------------------------------------------------- -->
-  <dialog id="dlg-accuse" class="dialog wide">
-    <form id="accuse-form" method="dialog">
-      <div class="accuse-head">
-        <div>
-          <p class="kicker">Politiebureau &middot; Interview room 2</p>
-          <h2>Make your case to the inspector</h2>
+    <!-- Report ------------------------------------------------------------ -->
+    <section id="screen-report" class="screen" hidden>
+      <div id="report" class="report"></div>
+    </section>
+
+    <!-- Briefing dialog --------------------------------------------------- -->
+    <dialog id="dlg-brief" class="dialog">
+      <form method="dialog">
+        <p class="kicker">Briefing</p>
+        <h2 id="brief-title"></h2>
+        <p id="brief-intro" class="brief-intro"></p>
+        <div class="brief-grid">
+          <div>
+            <span class="label">Your witnesses</span>
+            <ul id="brief-witnesses" class="brief-list"></ul>
+          </div>
+          <div>
+            <span class="label">Controls</span>
+            <ul class="controls">
+              <li>
+                <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span
+                >Walk (or click anywhere)
+              </li>
+              <li>
+                <span><kbd>E</kbd></span
+                >Talk / enter
+              </li>
+              <li>
+                <span><kbd>Esc</kbd></span
+                >Leave a conversation
+              </li>
+              <li>
+                <span><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd></span
+                >Quick replies
+              </li>
+            </ul>
+          </div>
         </div>
-        <button type="button" class="icon-btn" id="accuse-x" aria-label="Back to the street">
-          <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5 5 10 10M15 5 5 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        </button>
-      </div>
-      <div id="accuse-evidence" class="accuse-evidence"></div>
-      <label for="accuse-text" class="field-label" id="accuse-q"></label>
-      <textarea id="accuse-text" rows="5" maxlength="4000" placeholder="Connect all three pieces of evidence. Who or what is responsible, and why?"></textarea>
-      <div id="accuse-result" class="accuse-result" hidden></div>
-      <div class="row end">
-        <button type="button" class="btn ghost" id="accuse-back">Back to the street</button>
-        <button type="submit" class="btn primary" id="accuse-submit">Present the case</button>
-      </div>
-    </form>
-  </dialog>
+        <p class="fine">
+          Witnesses judge understanding, not keywords. Answer in your own words. Ask for a hint any time; honest questions never raise
+          suspicion.
+        </p>
+        <button class="btn primary block" value="go" autofocus>Begin the investigation</button>
+      </form>
+    </dialog>
 
-  <script type="module" src="app.js"></script>
-</body>
+    <!-- Accusation dialog ------------------------------------------------- -->
+    <dialog id="dlg-accuse" class="dialog wide">
+      <form id="accuse-form" method="dialog">
+        <div class="accuse-head">
+          <div>
+            <p class="kicker">Politiebureau &middot; Interview room 2</p>
+            <h2>Make your case to the inspector</h2>
+          </div>
+          <button type="button" class="icon-btn" id="accuse-x" aria-label="Back to the street">
+            <svg viewBox="0 0 20 20" aria-hidden="true">
+              <path d="m5 5 10 10M15 5 5 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            </svg>
+          </button>
+        </div>
+        <div id="accuse-evidence" class="accuse-evidence"></div>
+        <label for="accuse-text" class="field-label" id="accuse-q"></label>
+        <textarea
+          id="accuse-text"
+          rows="5"
+          maxlength="4000"
+          placeholder="Connect all three pieces of evidence. Who or what is responsible, and why?"
+        ></textarea>
+        <div id="accuse-result" class="accuse-result" hidden></div>
+        <div class="row end">
+          <button type="button" class="btn ghost" id="accuse-back">Back to the street</button>
+          <button type="submit" class="btn primary" id="accuse-submit">Present the case</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script type="module" src="client/main.js"></script>
+  </body>
 </html>

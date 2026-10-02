@@ -1,7 +1,8 @@
-// The built-in demo case (introductory economics).
-// Lives on the server so the solution and reveal conditions stay hidden from the browser.
-// `keywords` are only used for offline grading when the AI service can't be reached.
-export const DEMO_CASE = {
+// Built-in demo case (introductory economics). Kept server-side so the solution stays hidden.
+// `keywords` are only used for offline grading.
+import type { CaseDraft } from "./types.ts";
+
+export const DEMO_CASE: CaseDraft = {
   title: "The Case of the Vanished Tulips",
   place: "Jordaan, Amsterdam",
   intro: "Rain on the Prinsengracht. A tulip trader has lost everything overnight, and three people saw it coming.",
@@ -18,7 +19,8 @@ export const DEMO_CASE = {
       concept: "Supply and demand",
       greeting: "You're the detective? Then you'd better understand a market before you understand a crime.",
       challenge: "If the supply of tulips suddenly doubles but nobody wants more of them, what happens to the price, and why?",
-      reveal_condition: "Says the price falls because supply now exceeds demand at the old price, so sellers must cut prices to clear stock.",
+      reveal_condition:
+        "Says the price falls because supply now exceeds demand at the old price, so sellers must cut prices to clear stock.",
       hint: "what happens when there is far more of something than people want to buy?",
       clue: "Receipt: tulip prices crashed the week supply doubled",
       personality: "brisk, warm, sharp-eyed",
@@ -32,7 +34,8 @@ export const DEMO_CASE = {
       concept: "Price elasticity of demand",
       greeting: "Mind the carpet. I deal in numbers, not feelings, detective.",
       challenge: "Is demand for bread elastic or inelastic? And for designer tulips? Justify one of them.",
-      reveal_condition: "Bread is inelastic because it's a necessity with few substitutes; designer tulips are elastic because they're a luxury with substitutes, so buyers react strongly to price changes.",
+      reveal_condition:
+        "Bread is inelastic because it's a necessity with few substitutes; designer tulips are elastic because they're a luxury with substitutes, so buyers react strongly to price changes.",
       hint: "who stops buying when the price rises, and who keeps buying no matter what?",
       clue: "Ledger: buyers vanished the moment prices peaked",
       personality: "precise, dry, impatient",
@@ -46,7 +49,8 @@ export const DEMO_CASE = {
       concept: "Externalities",
       greeting: "Mind the mud. Something stinks in my ditch, and it's not the cows.",
       challenge: "Greenhouse runoff pollutes my ditch. Who pays for that, and why is the market price of those tulips wrong?",
-      reveal_condition: "Identifies the pollution as an external cost borne by third parties (neighbours, society) that isn't included in the market price, so the price is too low.",
+      reveal_condition:
+        "Identifies the pollution as an external cost borne by third parties (neighbours, society) that isn't included in the market price, so the price is too low.",
       hint: "who bears a cost that the seller never has to pay?",
       clue: "Water report: runoff costs nobody paid for",
       personality: "slow, blunt, honest",
