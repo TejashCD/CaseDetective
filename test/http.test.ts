@@ -8,10 +8,10 @@ import { after, before, describe, it } from "node:test";
 import { RefusalError } from "../src/server/ai/errors.ts";
 import { CaseSchema } from "../src/server/ai/schemas.ts";
 import { createApp } from "../src/server/app.ts";
-import { CaseStore } from "../src/server/game/case-store.ts";
+import { CaseSealer } from "../src/server/game/case-sealer.ts";
 import { Game } from "../src/server/game/engine.ts";
 import { resolveFile } from "../src/server/http/static.ts";
-import type { CaseView, ErrorResponse } from "../src/shared/api.ts";
+import type { CaseReport, CaseStarted, CaseView, ErrorResponse, TalkResponse } from "../src/shared/api.ts";
 import { defaultAnswer, fakeAi, SAMPLE_CASE, silentLogger } from "./helpers/fakes.ts";
 
 let server: Server;
@@ -36,7 +36,7 @@ before(async () => {
     }
     return defaultAnswer(options);
   });
-  const game = new Game({ ai, store: new CaseStore(), talkEffort: "low", logger: silentLogger });
+  const game = new Game({ ai, sealer: new CaseSealer("test-secret"), talkEffort: "low", logger: silentLogger });
   server = createApp({ game, ai, staticDirs: [assets, compiled], logger: silentLogger });
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
   baseUrl = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
@@ -66,27 +66,30 @@ describe("API", () => {
     assert.deepEqual(await res.json(), { ok: true, model: "test-model", keyConfigured: true });
   });
 
-  it("plays a case: create, talk, accuse too early, fetch, report", async () => {
+  it("plays a case by passing the token along: create, talk, accuse too early, view, report", async () => {
     const created = await post("/api/case", { material: "Chemistry" });
     assert.equal(created.status, 200);
-    const view = (await created.json()) as CaseView;
+    const { case: view, token } = (await created.json()) as CaseStarted;
     assert.equal(view.title, SAMPLE_CASE.title);
 
-    const talk = await post(`/api/case/${view.id}/talk`, { npc: 0, text: "Hello" });
+    const talk = await post("/api/case/talk", { token, npc: 0, text: "Hello" });
     assert.equal(talk.status, 200);
+    const { token: next } = (await talk.json()) as TalkResponse;
+    assert.notEqual(next, token);
 
-    const early = await post(`/api/case/${view.id}/accuse`, { text: "It was all three concepts at once." });
+    const early = await post("/api/case/accuse", { token: next, text: "It was all three concepts at once." });
     assert.equal(early.status, 403);
 
-    const fetched = (await (await fetch(`${baseUrl}/api/case/${view.id}`)).json()) as CaseView;
+    const fetched = (await (await post("/api/case/view", { token: next })).json()) as CaseView;
     assert.equal(fetched.id, view.id);
 
-    const report = (await (await fetch(`${baseUrl}/api/case/${view.id}/report`)).json()) as { solution: string };
+    const report = (await (await post("/api/case/report", { token: next })).json()) as CaseReport;
     assert.equal(report.solution, SAMPLE_CASE.solution);
+    assert.equal(report.concepts[0]?.exchanges, 1);
   });
 
   it("starts the demo case", async () => {
-    const view = (await (await post("/api/demo", {})).json()) as CaseView;
+    const { case: view } = (await (await post("/api/demo", {})).json()) as CaseStarted;
     assert.equal(view.demo, true);
     assert.equal(view.title, "The Case of the Vanished Tulips");
   });
@@ -97,8 +100,8 @@ describe("API", () => {
       [post("/api/case", "{not json"), 400, /Malformed/],
       [post("/api/case", "[1,2]"), 400, /Malformed/],
       [post("/api/case", { material: "x".repeat(250_000) }), 413, /too much text/],
-      [fetch(`${baseUrl}/api/case/nope`), 404, /case file is gone/],
-      [post("/api/case/nope/talk", { npc: 0, text: "hi" }), 404, /case file is gone/],
+      [post("/api/case/view", { token: "nope" }), 404, /can't be opened/],
+      [post("/api/case/talk", { npc: 0, text: "hi" }), 404, /can't be opened/],
       [fetch(`${baseUrl}/api/unknown`), 404, /Not found/],
       [fetch(`${baseUrl}/api/case`), 405, /Method not allowed/],
     ];

@@ -12,18 +12,22 @@ const SECURITY_HEADERS = {
   "x-frame-options": "DENY",
 };
 
-interface AppOptions {
+export interface AppOptions {
   game: Game;
   ai: Pick<ModelClient, "model" | "configured">;
-  staticDirs: readonly string[];
+  /** Directories to serve files from. Empty when a CDN serves them (Vercel). */
+  staticDirs?: readonly string[];
   logger?: Pick<Console, "error">;
 }
 
-export function createApp({ game, ai, staticDirs, logger = console }: AppOptions): http.Server {
+export type NodeHandler = (req: http.IncomingMessage, res: http.ServerResponse) => Promise<void>;
+
+/** One request handler for both the standalone server and the Vercel function. */
+export function createRequestHandler({ game, ai, staticDirs = [], logger = console }: AppOptions): NodeHandler {
   const handleApi = createApiHandler(game, ai);
   const serveStatic = createStaticHandler(staticDirs);
 
-  async function handle(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
+  return async (req, res) => {
     for (const [name, value] of Object.entries(SECURITY_HEADERS)) res.setHeader(name, value);
     const url = new URL(req.url ?? "/", "http://localhost");
     try {
@@ -38,7 +42,10 @@ export function createApp({ game, ai, staticDirs, logger = console }: AppOptions
       }
       sendJson(res, status, { error: message });
     }
-  }
+  };
+}
 
+export function createApp(options: AppOptions): http.Server {
+  const handle = createRequestHandler(options);
   return http.createServer((req, res) => void handle(req, res));
 }

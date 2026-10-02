@@ -125,7 +125,7 @@ export class Interview {
     this.#world.setThinking(true);
 
     try {
-      const result = await api.talk(session.id, index, text).finally(() => {
+      const result = await api.talk(session.token, index, text).finally(() => {
         pending.remove();
         this.#world.setThinking(false);
       });
@@ -145,7 +145,7 @@ export class Interview {
   // ---- results -------------------------------------------------------------
 
   #applyResult(session: CaseSession, index: number, result: TalkResponse): void {
-    session.applyState(result.state);
+    session.update(result);
     if (result.clue) session.earnClue(index, result.clue);
     session.quickReplies[index] = result.quickReplies.length > 0 ? result.quickReplies : [...FALLBACK_REPLIES];
 

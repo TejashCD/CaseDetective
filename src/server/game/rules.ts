@@ -18,6 +18,8 @@ export const SUSPICION = {
 /** Past exchanges with a witness sent back to the model as context. */
 export const HISTORY_WINDOW = 10;
 export const QUICK_REPLY_COUNT = 3;
+/** Review notes kept per case. Keeps the case token small. */
+export const MAX_NOTES = 30;
 
 export const EFFORT = {
   createCase: "medium",

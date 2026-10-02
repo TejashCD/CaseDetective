@@ -1,5 +1,5 @@
-// Client-side state for the case being played: the server's view plus what the player
-// has seen in each conversation. Saved per tab so a refresh resumes the case.
+// Client-side state for the case being played: the server's view, the case token, and
+// what the player has seen in each conversation. Saved per tab so a refresh resumes the case.
 import type { CaseState, CaseView, Witness } from "../../shared/api.ts";
 import { WITNESS_COUNT } from "../../shared/limits.ts";
 import { sessionStore } from "../core/storage.ts";
@@ -14,35 +14,49 @@ interface SavedConversations {
   quick: string[][];
 }
 
-const ACTIVE_CASE_KEY = "case";
+const TOKEN_KEY = "token";
 const conversationsKey = (id: string) => `chat.${id}`;
 
 export class CaseSession {
   readonly view: CaseView;
+  /** Encrypted case state from the server. Sent with every request, replaced by every response. */
+  #token: string;
   /** Display transcript per witness. */
   readonly transcripts: ChatMessage[][];
   /** Suggested replies per witness. */
   readonly quickReplies: string[][];
 
-  constructor(view: CaseView, saved: SavedConversations | null = null) {
+  constructor(view: CaseView, token: string, saved: SavedConversations | null = null) {
     this.view = view;
+    this.#token = token;
     this.transcripts = isPerWitness(saved?.chats) ? saved.chats : emptyPerWitness();
     this.quickReplies = isPerWitness(saved?.quick) ? saved.quick : emptyPerWitness();
   }
 
   /** Starts or resumes a case and marks it as this tab's active case. */
-  static begin(view: CaseView, { resume = false } = {}): CaseSession {
-    sessionStore.set(ACTIVE_CASE_KEY, view.id);
+  static begin(view: CaseView, token: string, { resume = false } = {}): CaseSession {
+    sessionStore.set(TOKEN_KEY, token);
     const saved = resume ? sessionStore.getJson<SavedConversations>(conversationsKey(view.id)) : null;
-    return new CaseSession(view, saved);
+    return new CaseSession(view, token, saved);
   }
 
-  static activeCaseId(): string | null {
-    return sessionStore.get(ACTIVE_CASE_KEY);
+  static activeCaseToken(): string | null {
+    return sessionStore.get(TOKEN_KEY);
   }
 
   static forgetActiveCase(): void {
-    sessionStore.remove(ACTIVE_CASE_KEY);
+    sessionStore.remove(TOKEN_KEY);
+  }
+
+  get token(): string {
+    return this.#token;
+  }
+
+  /** Applies a server response that changed the case. */
+  update({ token, state }: { token: string; state: CaseState }): void {
+    this.#token = token;
+    this.view.state = state;
+    sessionStore.set(TOKEN_KEY, token);
   }
 
   get id(): string {
@@ -95,10 +109,6 @@ export class CaseSession {
 
   hasMet(index: number): boolean {
     return (this.transcripts[index]?.length ?? 0) > 0;
-  }
-
-  applyState(state: CaseState): void {
-    this.view.state = state;
   }
 
   earnClue(index: number, clue: string): void {

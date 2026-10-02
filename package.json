@@ -6,8 +6,9 @@
   "type": "module",
   "main": "dist/server/main.js",
   "scripts": {
-    "build": "npm run clean && tsc -p tsconfig.server.json && tsc -p tsconfig.client.json",
+    "build": "npm run clean && tsc -p tsconfig.server.json && tsc -p tsconfig.client.json && npm run copy-public",
     "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
+    "copy-public": "node -e \"require('node:fs').cpSync('public', 'dist/web', { recursive: true })\"",
     "start": "node dist/server/main.js",
     "dev": "concurrently -k -n web,server -c blue,green \"tsc -p tsconfig.client.json --watch --preserveWatchOutput\" \"node --watch src/server/main.ts\"",
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.client.json --noEmit",

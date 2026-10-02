@@ -2,6 +2,8 @@ import type {
   AccuseRequest,
   AccuseResponse,
   CaseReport,
+  CaseStarted,
+  CaseToken,
   CaseView,
   CreateCaseRequest,
   ErrorResponse,
@@ -42,15 +44,13 @@ async function request<T>(path: string, body?: object): Promise<T> {
   return data as T;
 }
 
-const caseUrl = (id: string) => `/api/case/${encodeURIComponent(id)}`;
-
 export const api = {
-  createCase: (material: string) => request<CaseView>("/api/case", { material } satisfies CreateCaseRequest),
-  playDemo: () => request<CaseView>("/api/demo", {}),
-  getCase: (id: string) => request<CaseView>(caseUrl(id)),
-  talk: (id: string, npc: number, text: string) => request<TalkResponse>(`${caseUrl(id)}/talk`, { npc, text } satisfies TalkRequest),
-  accuse: (id: string, text: string) => request<AccuseResponse>(`${caseUrl(id)}/accuse`, { text } satisfies AccuseRequest),
-  getReport: (id: string) => request<CaseReport>(`${caseUrl(id)}/report`),
+  createCase: (material: string) => request<CaseStarted>("/api/case", { material } satisfies CreateCaseRequest),
+  playDemo: () => request<CaseStarted>("/api/demo", {}),
+  getCase: (token: string) => request<CaseView>("/api/case/view", { token } satisfies CaseToken),
+  talk: (token: string, npc: number, text: string) => request<TalkResponse>("/api/case/talk", { token, npc, text } satisfies TalkRequest),
+  accuse: (token: string, text: string) => request<AccuseResponse>("/api/case/accuse", { token, text } satisfies AccuseRequest),
+  getReport: (token: string) => request<CaseReport>("/api/case/report", { token } satisfies CaseToken),
 };
 
 export function errorMessage(error: unknown): string {

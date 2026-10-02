@@ -29,18 +29,21 @@ export interface CaseProgress {
   clues: boolean[];
   suspicion: number;
   notes: ReviewNote[];
+  /** Recent exchanges per witness, trimmed to what the model needs as context. */
   history: Exchange[][];
+  /** Total answers given per witness, including ones trimmed from history. */
+  exchanges: number[];
   attempts: number;
   verdict: "solved" | null;
   feedback: string;
   ejections: number;
 }
 
+/** Everything the server knows about one case. Sealed into the client's token. */
 export interface CaseRecord {
   id: string;
   demo: boolean;
   caseFile: CaseFile;
   progress: CaseProgress;
   createdAt: number;
-  touchedAt: number;
 }

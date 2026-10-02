@@ -1,4 +1,7 @@
 // Request and response shapes for the HTTP API, shared by server and client.
+//
+// The server keeps no game state. Each case travels as an encrypted `token` that the
+// client sends with every request and replaces with the one in each response.
 
 export type Understanding = "none" | "partial" | "full";
 export type Verdict = "solved" | "partial" | "no";
@@ -35,16 +38,24 @@ export interface CaseView {
   state: CaseState;
 }
 
+export interface CaseToken {
+  token: string;
+}
+
 export interface CreateCaseRequest {
   material: string;
 }
 
-export interface TalkRequest {
+export interface CaseStarted extends CaseToken {
+  case: CaseView;
+}
+
+export interface TalkRequest extends CaseToken {
   npc: number;
   text: string;
 }
 
-export interface TalkResponse {
+export interface TalkResponse extends CaseToken {
   reply: string;
   understanding: Understanding;
   suspicionDelta: number;
@@ -55,11 +66,11 @@ export interface TalkResponse {
   state: CaseState;
 }
 
-export interface AccuseRequest {
+export interface AccuseRequest extends CaseToken {
   text: string;
 }
 
-export interface AccuseResponse {
+export interface AccuseResponse extends CaseToken {
   verdict: Verdict;
   feedback: string;
   missing: string[];

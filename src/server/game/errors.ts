@@ -21,6 +21,6 @@ export class CaseNotFoundError extends GameError {
   override name = "CaseNotFoundError";
 
   constructor() {
-    super("This case file is gone. The server may have restarted. Start a new case.");
+    super("This case file can't be opened anymore. Start a new case.");
   }
 }

@@ -72,8 +72,8 @@ export class AccusationDialog {
     this.#submit.disabled = true;
     this.#submit.textContent = "The inspector is reading...";
     try {
-      const result = await api.accuse(session.id, text);
-      session.applyState(result.state);
+      const result = await api.accuse(session.token, text);
+      session.update(result);
       this.#showVerdict(result);
       if (result.verdict === "solved") {
         this.#solved = true;

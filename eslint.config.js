@@ -8,7 +8,7 @@ export default tseslint.config(
   ...tseslint.configs.strictTypeChecked,
   {
     languageOptions: {
-      parserOptions: { projectService: { allowDefaultProject: ["eslint.config.js"] }, tsconfigRootDir: import.meta.dirname },
+      parserOptions: { projectService: { allowDefaultProject: ["eslint.config.js", "api/*.js"] }, tsconfigRootDir: import.meta.dirname },
     },
     rules: {
       "@typescript-eslint/restrict-template-expressions": ["error", { allowNumber: true }],
@@ -22,5 +22,5 @@ export default tseslint.config(
   { files: ["src/client/**"], languageOptions: { globals: globals.browser } },
   // describe() and it() return promises that node:test tracks itself.
   { files: ["test/**"], rules: { "@typescript-eslint/no-floating-promises": "off" } },
-  { files: ["eslint.config.js"], ...tseslint.configs.disableTypeChecked },
+  { files: ["eslint.config.js", "api/**"], ...tseslint.configs.disableTypeChecked },
 );

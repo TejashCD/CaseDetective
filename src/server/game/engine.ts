@@ -1,16 +1,18 @@
-import type { AccuseResponse, CaseReport, CaseView, TalkResponse } from "../../shared/api.ts";
+import crypto from "node:crypto";
+import type { AccuseResponse, CaseReport, CaseStarted, CaseView, TalkResponse } from "../../shared/api.ts";
 import { MalformedOutputError } from "../ai/errors.ts";
 import type { Effort, ModelClient } from "../ai/model-client.ts";
 import { accusationPrompt, ACCUSATION_SYSTEM, CASE_SYSTEM, casePrompt, talkPrompt, talkSystem } from "../ai/prompts.ts";
 import { AccusationSchema, CaseSchema, TalkSchema } from "../ai/schemas.ts";
-import type { CaseStore } from "./case-store.ts";
+import type { CaseSealer } from "./case-sealer.ts";
 import { DEMO_CASE } from "./demo-case.ts";
-import { ActionNotAllowedError, CaseNotFoundError, InputTooLargeError, InvalidInputError } from "./errors.ts";
+import { ActionNotAllowedError, InputTooLargeError, InvalidInputError } from "./errors.ts";
 import { gradeAccusationOffline, gradeTalkOffline } from "./offline-grader.ts";
 import {
   EFFORT,
   HISTORY_WINDOW,
   LIMITS,
+  MAX_NOTES,
   MAX_SIGN_LENGTH,
   QUICK_REPLY_COUNT,
   SUSPICION,
@@ -25,29 +27,36 @@ const DEFAULT_QUICK_REPLIES = ["Can I have a hint?", "Explain it another way.", 
 
 interface GameOptions {
   ai: ModelClient;
-  store: CaseStore;
+  sealer: CaseSealer;
   talkEffort: Effort;
   logger?: Pick<Console, "warn">;
+  now?: () => number;
 }
 
+/**
+ * Game rules. Stateless: every method takes the case token from the client, and every
+ * change to the case comes back as a new token.
+ */
 export class Game {
   readonly #ai: ModelClient;
-  readonly #store: CaseStore;
+  readonly #sealer: CaseSealer;
   readonly #talkEffort: Effort;
   readonly #logger: Pick<Console, "warn">;
+  readonly #now: () => number;
 
-  constructor({ ai, store, talkEffort, logger = console }: GameOptions) {
+  constructor({ ai, sealer, talkEffort, logger = console, now = Date.now }: GameOptions) {
     this.#ai = ai;
-    this.#store = store;
+    this.#sealer = sealer;
     this.#talkEffort = talkEffort;
     this.#logger = logger;
+    this.#now = now;
   }
 
-  startDemo(): CaseView {
-    return this.#addCase(DEMO_CASE, true);
+  startDemo(): CaseStarted {
+    return this.#newCase(DEMO_CASE, true);
   }
 
-  async startCase(input: unknown): Promise<CaseView> {
+  async startCase(input: unknown): Promise<CaseStarted> {
     const material = textInput(input);
     if (material.length < LIMITS.materialMin) throw new InvalidInputError("Paste some notes or name a topic first.");
     if (material.length > LIMITS.materialMax) throw new InputTooLargeError(tooMuchText());
@@ -63,19 +72,19 @@ export class Game {
         }
       },
     });
-    return this.#addCase(generated, false);
+    return this.#newCase(generated, false);
   }
 
-  getCase(id: string): CaseView {
-    return toCaseView(this.#record(id));
+  getCase(token: unknown): CaseView {
+    return toCaseView(this.#sealer.open(token));
   }
 
-  getReport(id: string): CaseReport {
-    return toCaseReport(this.#record(id));
+  getReport(token: unknown): CaseReport {
+    return toCaseReport(this.#sealer.open(token));
   }
 
-  async talk(id: string, witnessIndex: unknown, input: unknown): Promise<TalkResponse> {
-    const record = this.#record(id);
+  async talk(token: unknown, witnessIndex: unknown, input: unknown): Promise<TalkResponse> {
+    const record = this.#sealer.open(token);
     const index = Number(witnessIndex);
     const text = textInput(input).slice(0, LIMITS.talkMax);
     const { caseFile, progress } = record;
@@ -91,7 +100,7 @@ export class Game {
         this.#ai.ask({
           schema: TalkSchema,
           system: talkSystem(caseFile),
-          user: talkPrompt({ witness, clueEarned: alreadyEarned, history: history.slice(-HISTORY_WINDOW), text }),
+          user: talkPrompt({ witness, clueEarned: alreadyEarned, history, text }),
           effort: this.#talkEffort,
         }),
       () => gradeTalkOffline(witness, text),
@@ -99,11 +108,13 @@ export class Game {
 
     const delta = alreadyEarned ? 0 : clamp(Math.trunc(result.suspicion_delta) || 0, 0, SUSPICION.maxPenalty);
     history.push({ student: text, npc: result.reply });
+    if (history.length > HISTORY_WINDOW) history.splice(0, history.length - HISTORY_WINDOW);
+    progress.exchanges[index] = (progress.exchanges[index] ?? 0) + 1;
     progress.suspicion = Math.min(SUSPICION.max, progress.suspicion + delta);
 
     const clueEarned = !alreadyEarned && result.understanding === "full";
     if (clueEarned) progress.clues[index] = true;
-    if (result.understanding !== "full" && result.feedback_note) {
+    if (result.understanding !== "full" && result.feedback_note && progress.notes.length < MAX_NOTES) {
       progress.notes.push({ concept: witness.concept, note: result.feedback_note });
     }
 
@@ -123,11 +134,12 @@ export class Game {
       ejected,
       offline,
       state: toCaseState(progress),
+      token: this.#sealer.seal(record),
     };
   }
 
-  async accuse(id: string, input: unknown): Promise<AccuseResponse> {
-    const record = this.#record(id);
+  async accuse(token: unknown, input: unknown): Promise<AccuseResponse> {
+    const record = this.#sealer.open(token);
     const { caseFile, progress } = record;
     if (!progress.clues.every(Boolean)) {
       throw new ActionNotAllowedError("You need all three clues before the inspector will listen.");
@@ -156,18 +168,19 @@ export class Game {
       missing: result.missing,
       offline,
       state: toCaseState(progress),
+      token: this.#sealer.seal(record),
     };
   }
 
-  #addCase(generated: CaseDraft, demo: boolean): CaseView {
-    const record = this.#store.add({ caseFile: normalizeCase(generated), progress: newProgress(), demo });
-    return toCaseView(record);
-  }
-
-  #record(id: string): CaseRecord {
-    const record = this.#store.get(id);
-    if (!record) throw new CaseNotFoundError();
-    return record;
+  #newCase(draft: CaseDraft, demo: boolean): CaseStarted {
+    const record: CaseRecord = {
+      id: crypto.randomUUID(),
+      demo,
+      caseFile: normalizeCase(draft),
+      progress: newProgress(),
+      createdAt: this.#now(),
+    };
+    return { case: toCaseView(record), token: this.#sealer.seal(record) };
   }
 
   /** The demo case falls back to offline grading so it stays playable without a key or connection. */
@@ -183,13 +196,13 @@ export class Game {
   }
 }
 
-function normalizeCase(generated: CaseDraft): CaseFile {
-  const npcs: CaseWitness[] = generated.npcs.slice(0, WITNESS_COUNT).map((w, i) => ({
+function normalizeCase(draft: CaseDraft): CaseFile {
+  const npcs: CaseWitness[] = draft.npcs.slice(0, WITNESS_COUNT).map((w, i) => ({
     ...w,
     color: WITNESS_COLORS[i] ?? WITNESS_COLORS[0],
     sign: w.sign.toUpperCase().slice(0, MAX_SIGN_LENGTH),
   }));
-  return { ...generated, npcs };
+  return { ...draft, npcs };
 }
 
 function newProgress(): CaseProgress {
@@ -198,6 +211,7 @@ function newProgress(): CaseProgress {
     suspicion: SUSPICION.start,
     notes: [],
     history: Array.from({ length: WITNESS_COUNT }, () => []),
+    exchanges: Array<number>(WITNESS_COUNT).fill(0),
     attempts: 0,
     verdict: null,
     feedback: "",

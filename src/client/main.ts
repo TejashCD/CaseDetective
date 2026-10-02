@@ -1,6 +1,6 @@
 // Client entry point: builds the UI components and wires them together.
 // Game rules and all AI calls live on the server.
-import type { CaseView } from "../shared/api.ts";
+import type { CaseStarted } from "../shared/api.ts";
 import { Sound } from "./audio/sound.ts";
 import { api, errorMessage } from "./core/api.ts";
 import { $ } from "./core/dom.ts";
@@ -66,8 +66,8 @@ const accusation = new AccusationDialog({
 
 // ---- case lifecycle --------------------------------------------------------
 
-async function startCase(view: CaseView, { resume = false } = {}): Promise<void> {
-  session = CaseSession.begin(view, { resume });
+async function startCase({ case: view, token }: CaseStarted, { resume = false } = {}): Promise<void> {
+  session = CaseSession.begin(view, token, { resume });
   await document.fonts.ready;
   world.setCase(view.npcs);
   caseFile.setCase(view);
@@ -97,7 +97,7 @@ async function showReport(): Promise<void> {
   accusation.close();
   interview.close();
   try {
-    const report = await api.getReport(session.id);
+    const report = await api.getReport(session.token);
     renderReport(report, {
       onResume: () => {
         screens.show("game");
@@ -117,10 +117,10 @@ async function showReport(): Promise<void> {
 
 /** After a refresh, pick the active case back up if the server still has it. */
 async function resumeActiveCase(): Promise<void> {
-  const id = CaseSession.activeCaseId();
-  if (!id) return;
+  const token = CaseSession.activeCaseToken();
+  if (!token) return;
   try {
-    await startCase(await api.getCase(id), { resume: true });
+    await startCase({ case: await api.getCase(token), token }, { resume: true });
   } catch {
     CaseSession.forgetActiveCase();
   }
@@ -206,5 +206,5 @@ bindControls({
   touchAction: $("#touch-action"),
 });
 
-initTitleScreen({ sound, screens, onCaseReady: (view) => void startCase(view) });
+initTitleScreen({ sound, screens, onCaseReady: (started) => void startCase(started) });
 void resumeActiveCase();

@@ -53,7 +53,7 @@ export function toCaseReport({ caseFile, progress }: CaseRecord): CaseReport {
       earned: progress.clues[i] ?? false,
       clue: w.clue,
       challenge: w.challenge,
-      exchanges: progress.history[i]?.length ?? 0,
+      exchanges: progress.exchanges[i] ?? 0,
     })),
     notes: uniqueNotes(progress.notes),
   };

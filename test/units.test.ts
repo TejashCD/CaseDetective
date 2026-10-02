@@ -1,19 +1,20 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { loadConfig } from "../src/server/config.ts";
-import { CaseStore } from "../src/server/game/case-store.ts";
+import { CaseSealer } from "../src/server/game/case-sealer.ts";
 import { DEMO_CASE } from "../src/server/game/demo-case.ts";
+import { CaseNotFoundError } from "../src/server/game/errors.ts";
 import { gradeAccusationOffline, gradeTalkOffline } from "../src/server/game/offline-grader.ts";
-import type { CaseFile, CaseProgress, CaseWitness } from "../src/server/game/types.ts";
+import type { CaseFile, CaseProgress, CaseRecord, CaseWitness } from "../src/server/game/types.ts";
 
 describe("loadConfig", () => {
   it("applies defaults", () => {
-    assert.deepEqual(loadConfig({}), { port: 3000, model: "claude-opus-5-5", talkEffort: "low", apiKey: "" });
+    assert.deepEqual(loadConfig({}), { port: 3000, model: "claude-opus-5-5", talkEffort: "low", apiKey: "", caseSecret: "" });
   });
 
   it("reads overrides and trims whitespace", () => {
-    const config = loadConfig({ PORT: "8080", MODEL_ID: " m ", TALK_EFFORT: "medium", ANTHROPIC_API_KEY: " k " });
-    assert.deepEqual(config, { port: 8080, model: "m", talkEffort: "medium", apiKey: "k" });
+    const config = loadConfig({ PORT: "8080", MODEL_ID: " m ", TALK_EFFORT: "medium", ANTHROPIC_API_KEY: " k ", CASE_SECRET: "s" });
+    assert.deepEqual(config, { port: 8080, model: "m", talkEffort: "medium", apiKey: "k", caseSecret: "s" });
   });
 
   it("rejects an invalid port or effort", () => {
@@ -23,31 +24,29 @@ describe("loadConfig", () => {
   });
 });
 
-describe("CaseStore", () => {
-  const data = { caseFile: {} as CaseFile, progress: {} as CaseProgress, demo: false };
+describe("CaseSealer", () => {
+  const record: CaseRecord = {
+    id: "case-1",
+    demo: false,
+    caseFile: { title: "Secret title", solution: "The butler" } as CaseFile,
+    progress: { suspicion: 42 } as CaseProgress,
+    createdAt: 1,
+  };
 
-  it("evicts the least recently used case when full", () => {
-    const store = new CaseStore({ maxCases: 2 });
-    const a = store.add(data);
-    const b = store.add(data);
-    store.get(a.id); // a is now the most recently used
-    const c = store.add(data);
-    assert.ok(store.get(a.id));
-    assert.equal(store.get(b.id), undefined);
-    assert.ok(store.get(c.id));
-    assert.equal(store.size, 2);
+  it("round-trips a record without exposing its contents", () => {
+    const sealer = new CaseSealer("secret");
+    const token = sealer.seal(record);
+    assert.ok(!token.includes("butler"));
+    assert.deepEqual(sealer.open(token), record);
   });
 
-  it("expires idle cases", () => {
-    let now = 0;
-    const store = new CaseStore({ ttlMs: 1000, now: () => now });
-    const record = store.add(data);
-    now = 900;
-    assert.ok(store.get(record.id), "access refreshes the timer");
-    now = 1800;
-    assert.ok(store.get(record.id));
-    now = 2900;
-    assert.equal(store.get(record.id), undefined);
+  it("rejects tampered tokens and tokens from another secret", () => {
+    const token = new CaseSealer("secret").seal(record);
+    const flipped = token.slice(0, -2) + (token.endsWith("A") ? "BB" : "AA");
+    assert.throws(() => new CaseSealer("secret").open(flipped), CaseNotFoundError);
+    assert.throws(() => new CaseSealer("other").open(token), CaseNotFoundError);
+    assert.throws(() => new CaseSealer("secret").open("garbage"), CaseNotFoundError);
+    assert.throws(() => new CaseSealer("secret").open(null), CaseNotFoundError);
   });
 });
 

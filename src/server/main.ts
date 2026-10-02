@@ -1,15 +1,12 @@
+// Standalone server for local development and any host that runs a Node process.
 import type { AddressInfo } from "node:net";
-import { createModelClient } from "./ai/model-client.ts";
 import { createApp } from "./app.ts";
 import { loadConfig, loadEnvFile, STATIC_DIRS } from "./config.ts";
-import { CaseStore } from "./game/case-store.ts";
-import { Game } from "./game/engine.ts";
+import { createServices } from "./services.ts";
 
 loadEnvFile();
 const config = loadConfig();
-
-const ai = createModelClient({ apiKey: config.apiKey, model: config.model });
-const game = new Game({ ai, store: new CaseStore(), talkEffort: config.talkEffort });
+const { ai, game } = createServices(config);
 const server = createApp({ game, ai, staticDirs: STATIC_DIRS });
 
 server.listen(config.port, () => {

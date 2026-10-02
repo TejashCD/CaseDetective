@@ -1,4 +1,4 @@
-import type { CaseView } from "../../shared/api.ts";
+import type { CaseStarted } from "../../shared/api.ts";
 import { LIMITS } from "../../shared/limits.ts";
 import type { Sound } from "../audio/sound.ts";
 import { api, errorMessage } from "../core/api.ts";
@@ -13,7 +13,7 @@ const LOADING_FINISH_MS = 450;
 interface TitleScreenOptions {
   sound: Sound;
   screens: Screens;
-  onCaseReady: (view: CaseView) => void;
+  onCaseReady: (started: CaseStarted) => void;
 }
 
 export function initTitleScreen({ sound, screens, onCaseReady }: TitleScreenOptions): void {
@@ -49,9 +49,9 @@ export function initTitleScreen({ sound, screens, onCaseReady }: TitleScreenOpti
     screens.show("loading");
     const progress = startLoadingProgress();
     try {
-      const view = await api.createCase(text);
+      const started = await api.createCase(text);
       progress.finish();
-      setTimeout(() => onCaseReady(view), LOADING_FINISH_MS);
+      setTimeout(() => onCaseReady(started), LOADING_FINISH_MS);
     } catch (failure) {
       progress.cancel();
       screens.show("title");

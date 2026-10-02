@@ -11,6 +11,8 @@ export interface Config {
   model: string;
   talkEffort: Effort;
   apiKey: string;
+  /** Encrypts case tokens. Falls back to a key derived from apiKey when unset. */
+  caseSecret: string;
 }
 
 const DEFAULTS = {
@@ -33,6 +35,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Readonly<Confi
     model: env.MODEL_ID?.trim() || DEFAULTS.model,
     talkEffort: parseEffort(env.TALK_EFFORT),
     apiKey: env.ANTHROPIC_API_KEY?.trim() || "",
+    caseSecret: env.CASE_SECRET?.trim() || "",
   });
 }
 

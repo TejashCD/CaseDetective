@@ -42,7 +42,19 @@ For development, `npm run dev` recompiles the client and restarts the server on 
 | `npm run lint`      | ESLint with typescript-eslint's strict rules |
 | `npm run check`     | Everything CI runs                           |
 
-Optional settings in `.env`: `MODEL_ID`, `TALK_EFFORT` (`low` to `max`) and `PORT`.
+Optional settings in `.env`: `CASE_SECRET`, `MODEL_ID`, `TALK_EFFORT` (`low` to `max`) and `PORT`.
+
+## Deploying to Vercel
+
+The repo is set up for Vercel (`vercel.json`): the build output in `dist/web` is served as static files, and every `/api/*` request goes to one serverless function (`api/index.js`).
+
+1. Import the repo in Vercel. The build settings come from `vercel.json`, so leave them on their defaults.
+2. In **Settings > Environment Variables**, add `ANTHROPIC_API_KEY`. Optionally add `CASE_SECRET` (any long random string).
+3. Redeploy. Environment variables only apply to deployments made after they are added.
+
+Visit `/api/health` on your deployment: `"keyConfigured": true` means the key reached the server.
+
+Any host that can run `npm start` (Render, Railway, Fly.io) works too.
 
 ## How it works
 
@@ -56,10 +68,12 @@ The street, characters and interiors are drawn on a canvas in code. There are no
 src/
   shared/          API types and limits used by client and server
   server/
-    main.ts        Entry point: config, wiring, listen
-    app.ts         HTTP server (also used by the tests)
+    main.ts        Standalone server entry point
+    vercel.ts      Serverless entry point (re-exported by api/index.js)
+    services.ts    Wires up the model client and game
+    app.ts         Request handler shared by both entry points
     ai/            Model client, schemas, prompts
-    game/          Rules, game engine, case store, demo case, offline grading
+    game/          Rules, game engine, case tokens, demo case, offline grading
     http/          Routes, static files, error mapping
   client/
     main.ts        Entry point: builds and connects the UI
@@ -68,13 +82,14 @@ src/
     game/          Client-side case state, saved per tab
     core/          API client, DOM and storage helpers
 public/            HTML, CSS, favicon
+api/               Vercel function
 test/              node:test suites using a fake model client
 ```
 
 A few decisions worth noting:
 
 - The game engine gets its model client and store passed in, so it is tested without network access.
-- Cases are kept in memory with an LRU limit and an idle timeout. A restart clears games in progress, which is fine for a single instance.
+- The server keeps no state. Each case is encrypted (AES-256-GCM) into a token the browser holds and sends back with every request, so any serverless instance can continue any case and nothing needs a database. The hidden solution stays unreadable, and edited tokens are rejected.
 - Pathfinding is plain functions with no DOM access, so it is unit tested in Node.
 - No framework and no bundler. TypeScript compiles to ES modules the browser loads directly, and Node runs the tests straight from the `.ts` sources.
 
